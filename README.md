@@ -10,7 +10,7 @@ Much like interaction any DisplayObject can be made accessible. This manager wil
 
 Check it out in action here (try tabbing):
 
-[demo]: http://www.goodboydigital.com/pixijs/accessibility/accessibility.html
+[DEMO](http://www.goodboydigital.com/pixijs/accessibility/accessibility.html)
 
 ## Usage
 
