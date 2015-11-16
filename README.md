@@ -63,3 +63,5 @@ That will output the built distributables to `./bin`.
 
 [node]:       http://nodejs.org/
 [gulp]:       http://gulpjs.com/
+
+**Your support helps us make Pixi.js even better. Make your pledge on [Patreon](https://www.patreon.com/user?u=2384552&ty=h&u=2384552) and we'll love you forever!**
