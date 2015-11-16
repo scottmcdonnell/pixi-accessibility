@@ -1,4 +1,4 @@
-# pixi-lights
+# pixi-accessibility
 
 A plugin that adds accessibility to Pixi.js
 
