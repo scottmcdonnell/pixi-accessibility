@@ -1,0 +1,69 @@
+{
+  "name": "pixi-accessibility",
+  "version": "1.0.0",
+  "description": "A plugin that adds accessibility to Pixi.js",
+  "license": "MIT",
+  "main": "./src/index.js",
+  "author": "Mat Groves <mat@goodboydigital.com>",
+  "homepage": "https://github.com/pixijs/pixi-accessibility",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/pixijs/pixi-accessibility.git"
+  },
+  "bugs": {
+    "url": "https://github.com/pixijs/pixi-accessibility/issues"
+  },
+  "scripts": {
+    "build": "gulp build",
+    "start": "hs . -o",
+    "docs": "./node_modules/.bin/jsdoc -c ./gulp/util/jsdoc.conf.json"
+  },
+  "engines": {
+    "node": ">=0.10.0"
+  },
+  "keywords": [
+    "2d",
+    "pixi"
+  ],
+  "peerDependencies": {
+    "pixi.js": "^3.0.7"
+  },
+  "dependencies": {
+    "brfs": "^1.4.0",
+    "glslify": "^2.2.1",
+    "glslify-import": "^1.0.0"
+  },
+  "devDependencies": {
+    "browserify": "^10.2.4",
+    "del": "^1.2.0",
+    "gulp": "^3.9.0",
+    "gulp-cached": "^1.1.0",
+    "gulp-jshint": "^1.11.0",
+    "gulp-mirror": "^0.4.0",
+    "gulp-plumber": "^1.0.1",
+    "gulp-rename": "^1.2.2",
+    "gulp-sourcemaps": "^1.5.2",
+    "gulp-uglify": "^1.2.0",
+    "gulp-util": "^3.0.6",
+    "http-server": "^0.8.0",
+    "jaguarjs-jsdoc": "git+https://github.com/davidshimjs/jaguarjs-jsdoc.git",
+    "jsdoc": "^3.3.2",
+    "jshint-summary": "^0.4.0",
+    "require-dir": "^0.3.0",
+    "run-sequence": "^1.1.1",
+    "vinyl-buffer": "^1.0.0",
+    "vinyl-source-stream": "^1.1.0",
+    "watchify": "^3.2.3"
+  },
+  "browserify": {
+    "transform": [
+      "brfs",
+      "glslify"
+    ]
+  },
+  "glslify": {
+    "transform": [
+      "glslify-import"
+    ]
+  }
+}
