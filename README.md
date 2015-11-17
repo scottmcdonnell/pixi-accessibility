@@ -6,7 +6,7 @@ A plugin that adds accessibility to Pixi.js
 
 ![image]( http://www.goodboydigital.com/pixijs/accessibility/tab_pixi.jpg)
 
-The Accessibility manager reacreates the ability to tab and and have content read by screen readers. This is very important as it can possibly help people with disabilities access pixi content.
+The Accessibility plugin adds the ability to tab and and have content read by screen readers. This is very important as it can possibly help people with disabilities access pixi content.
 
 Much like interaction any DisplayObject can be made accessible. This manager will map the events as if the mouse was being used, minimizing the efferot required to implement.
 
