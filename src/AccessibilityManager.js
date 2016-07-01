@@ -1,4 +1,6 @@
 
+var  Device = require('ismobilejs');
+
 // add some extra variables to the container..
 Object.assign(
     PIXI.DisplayObject.prototype,
@@ -18,18 +20,18 @@ function AccessibilityManager(renderer)
 {
 	// first we create a div that will sit over the pixi element. This is where the div overlays will go.
     var div = document.createElement('div');
-    
+
     div.style.width = 100 + 'px';
     div.style.height = 100 + 'px';
-    div.style.position = 'absolute';
+    div.style.position = 'fixed';
     div.style.top = 0;
     div.style.left = 0;
    //
     div.style.zIndex = 2;
-   	
+
    	/**
    	 * This is the dom element that will sit over the pixi element. This is where the div overlays will go.
-   	 * 
+   	 *
    	 * @type {HTMLElement}
    	 * @private
    	 */
@@ -37,15 +39,15 @@ function AccessibilityManager(renderer)
 
    	/**
    	 * A simple pool for storing divs.
-   	 * 
-   	 * @type {Array}
+   	 *
+   	 * @type {*}
    	 * @private
    	 */
  	this.pool = [];
 
  	/**
  	 * This is a tick used to check if an object is no longer being rendered.
- 	 * 
+ 	 *
  	 * @type {Number}
  	 * @private
  	 */
@@ -53,8 +55,8 @@ function AccessibilityManager(renderer)
 
    	/**
    	 * Setting this to true will visually show the divs
-   	 * 
-   	 * @type {Boolean}
+   	 *
+   	 * @type {boolean}
    	 */
    	this.debug = false;
 
@@ -68,33 +70,96 @@ function AccessibilityManager(renderer)
    	/**
      * The array of currently active accessible items.
      *
-     * @member {Array}
+     * @member {Array<*>}
      * @private
      */
    	this.children = [];
-   	
+
    	/**
-     * pre bind the functions..
+     * pre-bind the functions
+	 *
+ 	 * @private
      */
    	this._onKeyDown = this._onKeyDown.bind(this);
    	this._onMouseMove = this._onMouseMove.bind(this);
-   	
+
    	/**
      * stores the state of the manager. If there are no accessible objects or the mouse is moving the will be false.
      *
-     * @member {Array}
+     * @member {Array<*>}
      * @private
      */
    	this.isActive = false;
-
+   	this.isMobileAccessabillity = false;
+    this.isAlwaysOn = false;
 
    	// let listen for tab.. once pressed we can fire up and show the accessibility layer
    	window.addEventListener('keydown', this._onKeyDown, false);
+
+    //check for mobile specific solutions
+    if(this.isMobileDevice())
+    {
+        if (this.hasFocusEvents())
+        {
+            this.createTouchHook();
+        }
+        else
+        {
+            this.alwaysOn();
+        }
+    }
 }
 
 
 AccessibilityManager.prototype.constructor = AccessibilityManager;
 module.exports = AccessibilityManager;
+
+AccessibilityManager.prototype.createTouchHook = function()
+{
+	var hookDiv = document.createElement('button');
+	hookDiv.style.width = 1 + 'px';
+    hookDiv.style.height = 1 + 'px';
+    hookDiv.style.position = 'absolute';
+    hookDiv.style.top = -1000+'px';
+    hookDiv.style.left = -1000+'px';
+    hookDiv.style.zIndex = 2;
+    hookDiv.style.backgroundColor = '#FF0000';
+    hookDiv.title = 'HOOK DIV';
+
+    hookDiv.addEventListener('focus', function(){
+
+    	this.isMobileAccessabillity = true;
+    	this.activate();
+    	document.body.removeChild(hookDiv);
+
+    }.bind(this));
+
+    document.body.appendChild(hookDiv);
+
+};
+
+/**
+ * some mobile devices fire Focus Events in accessibility mode eg. IOS Voiceover
+ * other mobile devices do not fire Focus Events eg. Android Talkback or Kindle Fire VoiceView
+ * default to false unless tested
+ */
+AccessibilityManager.prototype.hasFocusEvents = function() {
+    return (Device.apple.device);
+};
+
+
+AccessibilityManager.prototype.isMobileDevice = function()
+{
+    return (Device.tablet || Device.phone);
+};
+
+AccessibilityManager.prototype.alwaysOn = function()
+{
+    this.isAlwaysOn = true;
+
+    //render is undefined until the next tick
+    setTimeout(this.activate.bind(this));
+};
 
 /**
  * Activating will cause the Accessibility layer to be shown. This is called when a user preses the tab key
@@ -102,7 +167,7 @@ module.exports = AccessibilityManager;
  */
 AccessibilityManager.prototype.activate = function()
 {
-	if(this.isActive)
+	if(this.isActive )
 	{
 		return;
 	}
@@ -114,7 +179,10 @@ AccessibilityManager.prototype.activate = function()
 
 	this.renderer.on('postrender', this.update, this);
 
-	this.renderer.view.parentNode.appendChild(this.div);	
+	if(this.renderer.view.parentNode)
+	{
+		this.renderer.view.parentNode.appendChild(this.div);
+	}
 };
 
 /**
@@ -123,7 +191,8 @@ AccessibilityManager.prototype.activate = function()
  */
 AccessibilityManager.prototype.deactivate = function()
 {
-	if(!this.isActive)
+
+	if(!this.isActive || this.isMobileAccessabillity)
 	{
 		return;
 	}
@@ -135,38 +204,76 @@ AccessibilityManager.prototype.deactivate = function()
 
 	this.renderer.off('postrender', this.update);
 
-	this.div.parentNode.removeChild(this.div);
+	if(this.div.parentNode)
+	{
+		this.div.parentNode.removeChild(this.div);
+	}
 
 };
 
 /**
  * This recursive function will run throught he scene graph and add any new accessible objects to the DOM layer.
- * @param element {PIXI.Container|PIXI.Sprite|PIXI.extras.TilingSprite} the DisplayObject to check.
+ * @param displayObject {PIXI.Container} the DisplayObject to check.
  * @private
  */
-AccessibilityManager.prototype.updateAccessibleObjects = function(DisplayObject)
+AccessibilityManager.prototype.updateAccessibleObjects = function(displayObject)
 {
-	if(!DisplayObject.visible)
+	if(!displayObject.visible)
 	{
 		return;
 	}
 
-	if(DisplayObject.accessible)
+	if(displayObject.accessible && displayObject.interactive)
 	{
-		if(!DisplayObject._accessibleActive)
+		if(!displayObject._accessibleActive)
 		{
-			this.addChild(DisplayObject);
+			this.addChild(displayObject);
 		}
-	   	
-	   	DisplayObject.renderId = this.renderId;
+
+	   	displayObject.renderId = this.renderId;
 	}
 
-	var children = DisplayObject.children;
+	var children = displayObject.children;
 
 	for (var i = children.length - 1; i >= 0; i--) {
-		
+
 		this.updateAccessibleObjects(children[i]);
 	}
+};
+
+/**
+ * Sort children by tab index
+ * The divs seem to tab in order of being added as a child regardless of the tab order set
+ * This sorts the children whenever a new one is set
+ * @param  {DOMElement} element the one which will have children sorted.
+ */
+AccessibilityManager.prototype.updateTabOrders = function()
+{
+    if (!this._tabOrderDirty) {
+        return;
+    }
+
+    var element = this.div;
+    var children = element.childNodes;
+
+    var list = [];
+    for (var i = 0; i < children.length; i++) {
+        if (children[i].nodeType === 1) {
+            list.push(children[i]);
+        }
+    }
+
+    list = list.sort(function(a, b) {
+        var ta = a.getAttribute('tabindex');
+        var tb = b.getAttribute('tabindex');
+        return ta === tb ? 0 : tb > ta ? -1 : 1;
+    });
+
+    for (var j in list) {
+        element.appendChild(list[j]);
+    }
+
+    this._tabOrderDirty = false;
 };
 
 
@@ -176,9 +283,16 @@ AccessibilityManager.prototype.updateAccessibleObjects = function(DisplayObject)
  */
 AccessibilityManager.prototype.update = function()
 {
+	//change this to strict equality comparison so that it will work with PIXI v3 where renderingToScreen is not set.
+    if (this.renderer.renderingToScreen === false) {
+    	return;
+  	}
 
 	// update children...
 	this.updateAccessibleObjects(this.renderer._lastObjectRendered);
+
+    //sort out tab orders
+    this.updateTabOrders();
 
 	var rect = this.renderer.view.getBoundingClientRect();
 	var sx = rect.width  / this.renderer.width;
@@ -200,7 +314,7 @@ AccessibilityManager.prototype.update = function()
 		{
 			child._accessibleActive = false;
 
-			this.children.splice(i, 1);
+            PIXI.utils.removeItems(this.children, i, 1);
 			this.div.removeChild( child._accessibleDiv );
 			this.pool.push(child._accessibleDiv);
 			child._accessibleDiv = null;
@@ -226,7 +340,7 @@ AccessibilityManager.prototype.update = function()
 
 				div.style.width = (hitArea.width * wt.a * sx) + 'px';
 				div.style.height = (hitArea.height * wt.d * sy) + 'px';
-			
+
 			}
 			else
 			{
@@ -239,7 +353,7 @@ AccessibilityManager.prototype.update = function()
 
 				div.style.width = (hitArea.width * sx) + 'px';
 				div.style.height = (hitArea.height * sy) + 'px';
-			}		
+			}
 		}
 	}
 
@@ -280,12 +394,12 @@ AccessibilityManager.prototype.capHitArea = function (hitArea)
 AccessibilityManager.prototype.addChild = function(displayObject)
 {
 //	this.activate();
-	
+
 	var div = this.pool.pop();
 
 	if(!div)
 	{
-		div = document.createElement('button'); 
+		div = document.createElement('button');
 
 	    div.style.width = 100 + 'px';
 	    div.style.height = 100 + 'px';
@@ -294,19 +408,37 @@ AccessibilityManager.prototype.addChild = function(displayObject)
 	    div.style.zIndex = 2;
 	    div.style.borderStyle = 'none';
 
-	    
+        if (this.isAlwaysOn) {
+            //remove the focus highlight from the div so you cannot see the hidden div during normal touch to click
+            div.style['-webkit-tap-highlight-color'] = 'rgba(0,0,0,0)';
+            div.style.border = 0;
+            div.style.outline = 'none';
+        }
+
+
 	    div.addEventListener('click', this._onClick.bind(this));
 	    div.addEventListener('focus', this._onFocus.bind(this));
 	    div.addEventListener('focusout', this._onFocusOut.bind(this));
 	}
-	   	
 
 
+	if(displayObject.accessibleTitle)
+	{
+		div.title = displayObject.accessibleTitle;
+	}
+	else if (!displayObject.accessibleTitle && !displayObject.accessibleHint)
+	{
+		div.title = 'displayObject ' + this.tabIndex;
+	}
 
-	div.title = displayObject.accessibleTitle || 'displayObject ' + this.tabIndex;
+	if(displayObject.accessibleHint)
+	{
+		div.setAttribute('aria-label', displayObject.accessibleHint);
+	}
+
 
 	//
-	
+
 	displayObject._accessibleActive = true;
 	displayObject._accessibleDiv = div;
 	div.displayObject = displayObject;
@@ -315,6 +447,9 @@ AccessibilityManager.prototype.addChild = function(displayObject)
 	this.children.push(displayObject);
 	this.div.appendChild( displayObject._accessibleDiv );
 	displayObject._accessibleDiv.tabIndex = displayObject.tabIndex;
+
+    //set this to true so we know to sort the tab order of the divs
+    this._tabOrderDirty = true;
 };
 
 
@@ -378,7 +513,7 @@ AccessibilityManager.prototype._onMouseMove = function()
  * Destroys the accessibility manager
  *
  */
-AccessibilityManager.prototype.destroy = function () 
+AccessibilityManager.prototype.destroy = function ()
 {
 	this.div = null;
 
@@ -387,10 +522,10 @@ AccessibilityManager.prototype.destroy = function ()
 		this.children[i].div = null;
 	}
 
-	
+
 	window.document.removeEventListener('mousemove', this._onMouseMove);
 	window.removeEventListener('keydown', this._onKeyDown);
-		
+
 	this.pool = null;
 	this.children = null;
 	this.renderer = null;
@@ -399,4 +534,3 @@ AccessibilityManager.prototype.destroy = function ()
 
 PIXI.WebGLRenderer.registerPlugin('accessibility', AccessibilityManager);
 PIXI.CanvasRenderer.registerPlugin('accessibility', AccessibilityManager);
-
