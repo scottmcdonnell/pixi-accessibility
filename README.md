@@ -1,3 +1,15 @@
+#update
+
+Now tested in:
+* IOS VoiceOver for IOS 9
+* Android TalkBack
+* Kindle VoiceView for FireHD 6
+
+Check it out in action here on desktop with tabbing and mobile with screenreader enabled:
+
+[DEMO](http://scottmcdonnell.github.io/pixi-accessibility/)
+
+
 # pixi-accessibility
 
 A plugin that adds accessibility to Pixi.js
@@ -10,9 +22,6 @@ The Accessibility plugin adds the ability to tab and and have content read by sc
 
 Much like interaction any DisplayObject can be made accessible. This manager will map the events as if the mouse was being used, minimizing the efferot required to implement.
 
-Check it out in action here (try tabbing):
-
-[DEMO](http://www.goodboydigital.com/pixijs/accessibility/accessibility.html)
 
 ## Usage
 
